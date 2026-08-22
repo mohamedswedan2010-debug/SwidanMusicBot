@@ -1,6 +1,7 @@
 import os
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
+from yt_dlp import YoutubeDL
 
 TOKEN = os.getenv("BOT_TOKEN")
 
@@ -10,24 +11,44 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def play(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         await update.message.reply_text(
-            "🎵 اكتب اسم الأغنية بعد الأمر\nمثال:\n/play Believer"
+            "اكتب اسم الأغنية:\n/play Believer"
         )
         return
 
     song = " ".join(context.args)
-    await update.message.reply_text(f"🎵 جاري تشغيل: {song}")
+
+    try:
+        with YoutubeDL({
+            "quiet": True,
+            "extract_flat": True,
+        }) as ydl:
+            result = ydl.extract_info(
+                f"ytsearch1:{song}",
+                download=False
+            )
+
+        video = result["entries"][0]
+
+        await update.message.reply_text(
+            f"🎵 {video['title']}\n{video['url']}"
+        )
+
+    except Exception:
+        await update.message.reply_text(
+            "❌ حصل خطأ أثناء البحث."
+        )
 
 async def pause(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("⏸️ تم إيقاف الأغنية مؤقتًا")
+    await update.message.reply_text("⏸️ الإيقاف المؤقت غير متاح حاليًا.")
 
 async def resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("▶️ تم استكمال الأغنية")
+    await update.message.reply_text("▶️ الاستكمال غير متاح حاليًا.")
 
 async def skip(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("⏭️ تم تخطي الأغنية")
+    await update.message.reply_text("⏭️ التخطي غير متاح حاليًا.")
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("⏹️ تم إيقاف التشغيل")
+    await update.message.reply_text("⏹️ الإيقاف غير متاح حاليًا.")
 
 app = Application.builder().token(TOKEN).build()
 
